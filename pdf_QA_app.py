@@ -3,11 +3,14 @@ import google.generativeai as genai
 import fitz  # PyMuPDF
 import streamlit as st
 
-# Set up Google Generative AI API
-api_key = os.getenv("GENERATIVE_AI_API_KEY")
+# Hardcoded API key (Not recommended for production)
+api_key = "set your api key here"  # Replace with your actual API key
+
+# Check if the API key is valid
 if not api_key:
-    st.error("API key not found. Please set the 'GENERATIVE_AI_API_KEY' environment variable.")
+    st.error("API key is missing. Please hardcode the API key in the script.")
 else:
+    # Configure Generative AI API
     genai.configure(api_key=api_key)
 
 # Configure generation settings for the model
