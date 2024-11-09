@@ -1,0 +1,134 @@
+Source Code Documentation: PDF Question-Answer Assistant
+1. Overview
+The application enables users to upload PDF files, extract their content, and ask questions about the content using a Generative AI model (powered by Google Gemini). It uses Streamlit for the front-end interface, PyMuPDF (fitz) for extracting text from PDFs, and Google Generative AI for answering user queries related to the PDF content.
+
+2. Imports
+python
+Copy code
+import os
+import google.generativeai as genai
+import fitz  # PyMuPDF
+import streamlit as st
+os: Provides functions to interact with the operating system, especially for handling environment variables.
+google.generativeai: This is the library that interacts with Google's generative AI model to generate responses based on text input.
+fitz (PyMuPDF): A Python binding for MuPDF that is used to open and read PDF files, extract text, images, etc.
+streamlit: A web application framework used to create the user interface for the application. It allows users to upload PDFs and interact with the application.
+3. API Key Configuration
+python
+Copy code
+# Hardcoded API key (Not recommended for production)
+api_key = "set your api key here"  # Replace with your actual API key
+
+# Check if the API key is valid
+if not api_key:
+    st.error("API key is missing. Please hardcode the API key in the script.")
+else:
+    # Configure Generative AI API
+    genai.configure(api_key=api_key)
+The API key is hardcoded for this implementation (not recommended for production).
+The key is checked before proceeding. If the key is missing, an error is shown to the user.
+Note: In a production environment, you should avoid hardcoding sensitive information like API keys. Use environment variables or a secure key management service.
+
+4. Generation Settings for the AI Model
+python
+Copy code
+# Configure generation settings for the model
+generation_config = {
+    "temperature": 1.2,
+    "top_p": 0.9,
+    "top_k": 50,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+# Initialize the GenerativeModel with your configuration
+model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
+    generation_config=generation_config,
+)
+chat_session = model.start_chat(history=[])
+Generation Configuration: Defines the settings for the AI model's response generation:
+temperature: Controls the randomness of the response. A higher value (e.g., 1.2) results in more creative responses.
+top_p, top_k: Control the sampling behavior for more coherent answers.
+max_output_tokens: The maximum number of tokens (words/pieces of text) in the generated response.
+response_mime_type: Specifies that the response should be in plain text.
+Generative Model: The AI model (gemini-1.5-flash) is initialized with the specified configuration, and a new chat session is started.
+5. PDF Text Extraction Function
+python
+Copy code
+# Function to extract text from PDF
+def extract_text_from_pdf(pdf_file):
+    text = ""
+    pdf_document = fitz.open(stream=pdf_file, filetype="pdf")
+    for page_num in range(pdf_document.page_count):
+        page = pdf_document.load_page(page_num)
+        text += page.get_text()  # Extracts text from the PDF page
+    return text
+extract_text_from_pdf: This function takes the uploaded PDF file and extracts the text content.
+fitz.open: Opens the PDF file.
+page.get_text(): Extracts the text content of each page.
+page_count: Iterates through all pages in the PDF and accumulates the extracted text.
+6. Streamlit UI Elements
+python
+Copy code
+# Streamlit UI
+st.title("PDF Question-Answer Assistant")
+st.title: Sets the title of the application in the Streamlit UI.
+python
+Copy code
+# Upload PDF section
+uploaded_pdf = st.file_uploader("Upload a PDF file", type="pdf")
+st.file_uploader: Displays a file upload widget to the user. It only accepts PDF files (type="pdf").
+7. PDF Processing and Question Handling
+python
+Copy code
+if uploaded_pdf:
+    try:
+        # Extract text from PDF
+        pdf_text = extract_text_from_pdf(uploaded_pdf.read())
+        st.success("PDF uploaded and text extracted successfully!")
+        
+        # Input for questions
+        question = st.text_input("Enter your question about the PDF content:")
+
+        if question:
+            input_text = f"Here is the text from the PDF:\n\n{pdf_text}\n\nQuestion: {question}"
+            response = chat_session.send_message(input_text)
+            response_text = response.text
+
+            # Display the response
+            st.write("AI Response:", response_text)
+
+            # Save the conversation history
+            chat_session.history.append({"role": "user", "parts": [question]})
+            chat_session.history.append({"role": "model", "parts": [response_text]})
+
+    except Exception as e:
+        st.error(f"An error occurred while processing the PDF: {e}")
+PDF Upload and Text Extraction: Once the PDF is uploaded, the text extraction function is called, and the extracted text is displayed to the user.
+Question Input: A text input widget is displayed for the user to enter their question about the uploaded PDF content.
+AI Model Interaction: The question is combined with the extracted PDF text and sent to the AI model for processing. The response is then displayed on the UI.
+History Logging: The user’s question and the AI model’s response are appended to the chat history to maintain the conversation context.
+Error Handling: If any error occurs during PDF extraction or the AI model interaction, it is caught and displayed to the user.
+
+8. Error Handling
+python
+Copy code
+except Exception as e:
+    st.error(f"An error occurred while processing the PDF: {e}")
+Error Handling: If any exception occurs (e.g., issues with reading the PDF or interacting with the AI), it is caught and the error message is displayed to the user.
+Conclusion
+The PDF Question-Answer Assistant is a simple application built using Streamlit, PyMuPDF, and Google Generative AI. It allows users to upload a PDF, ask questions related to the document's content, and get answers powered by a generative AI model.
+
+This solution can be expanded further by adding more features like:
+
+Improved error handling for edge cases.
+Support for more complex document formats (e.g., images, tables).
+Enhanced performance through multi-threading or caching.
+However, it's important to note that hardcoding sensitive information, like API keys, is not recommended in production environments. Instead, environment variables or secure key management services should be used.
+
+
+
+
+
+
